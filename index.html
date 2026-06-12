@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maximum Aesthetic Value</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Dancing+Script:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&family=IM+Fell+English:ital@0;1&family=Pacifico&family=Pirata+One&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:     #f4efe6;
+  --panel:  #ffffff;
+  --ink:    #2a1f0f;
+  --dim:    #7a6a50;
+  --amber:  #8a5f1a;
+  --star:   #c8960a;
+  --rust:   #8a3820;
+  --border: rgba(100, 80, 40, 0.18);
+}
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 18px;
+}
+
+#bg-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+/* ── GAME PANEL ── */
+#app {
+  position: relative; z-index: 1;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 1rem;
+}
+
+#game-panel {
+  width: min(820px, 96vw);
+  padding: clamp(1.5rem, 4vw, 2.8rem) clamp(1.5rem, 5vw, 3.5rem);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  box-shadow: 0 4px 32px rgba(80, 60, 20, 0.12), 0 1px 4px rgba(80,60,20,0.08);
+  transition: opacity 0.4s ease;
+}
+
+/* ── HEADER ── */
+#game-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+#game-title {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+#round-indicator {
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+#progress-bar {
+  width: 100%; height: 2px;
+  background: rgba(100, 80, 40, 0.12);
+  margin-bottom: 2rem;
+  border-radius: 1px;
+}
+#progress-fill {
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.6s ease;
+}
+
+/* ── SUBJECT DISPLAY ── */
+#subject-display {
+  min-height: 160px;
+  margin-bottom: 2rem;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+#subject-title {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 600;
+  color: var(--amber);
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  transition: opacity 0.5s;
+}
+
+#subject-desc {
+  font-size: clamp(1rem, 2.2vw, 1.18rem);
+  color: var(--ink);
+  line-height: 1.75;
+  max-width: 620px;
+  transition: opacity 0.5s 0.15s;
+}
+
+.word {
+  display: inline-block;
+  transform-origin: 50% 100%;
+  will-change: transform, opacity;
+}
+
+/* ── RATING AREA ── */
+#rating-area { margin-bottom: 1.8rem; }
+
+#rating-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: 0.7rem;
+}
+
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: #ddd5c5;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--amber);
+  cursor: pointer;
+  box-shadow: 0 1px 6px rgba(100,70,20,0.35);
+  transition: box-shadow 0.2s, transform 0.15s;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+  box-shadow: 0 2px 12px rgba(100,70,20,0.55);
+  transform: scale(1.1);
+}
+
+#star-display {
+  display: flex;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.85rem;
+  font-size: 1.7rem;
+  user-select: none;
+}
+.star { transition: all 0.18s; cursor: default; }
+.star.lit  { color: var(--star); }
+.star.unlit{ color: #ccc5b0; }
+
+/* ── SUBMIT ── */
+#submit-btn {
+  display: block; margin: 0 auto;
+  padding: 0.75rem 2.8rem;
+  background: transparent;
+  border: 1px solid rgba(100, 70, 20, 0.5);
+  color: var(--amber);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, color 0.2s, opacity 0.3s;
+}
+#submit-btn:hover:not(:disabled) {
+  background: var(--amber);
+  color: #fff;
+}
+#submit-btn:disabled { cursor: default; opacity: 0.3; }
+
+/* ── CORRECT ANSWER HINT ── */
+#correct-hint {
+  text-align: center;
+  font-size: 0.9rem;
+  margin-top: 0.8rem;
+  height: 1.4rem;
+  transition: opacity 0.5s;
+  opacity: 0;
+}
+
+/* ── FEEDBACK OVERLAY ── */
+#feedback-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 20;
+  align-items: center; justify-content: center;
+  pointer-events: none;
+  background: rgba(244, 239, 230, 0.75);
+  backdrop-filter: blur(3px);
+  transition: opacity 0.35s;
+}
+
+#feedback-text {
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  text-align: center;
+  line-height: 1.5;
+  max-width: 720px;
+  padding: 2rem;
+}
+
+/* ── END SCREEN ── */
+#end-screen {
+  display: none;
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 30;
+  background: var(--bg);
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  padding: 2.5rem;
+  text-align: center;
+  transition: opacity 0.8s;
+}
+
+#final-display {
+  max-width: 680px;
+  line-height: 1.7;
+}
+
+#restart-btn {
+  margin-top: 2.5rem;
+  padding: 0.75rem 2.8rem;
+  background: transparent;
+  border: 1px solid rgba(100, 70, 20, 0.45);
+  color: var(--amber);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.88rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+#restart-btn:hover { background: var(--amber); color: #fff; }
+
+/* ── ORNAMENT ── */
+.ornament {
+  color: rgba(100, 80, 40, 0.3);
+  font-size: 0.9rem;
+  margin: 0.8rem 0;
+}
+
+/* ── PHASE 2: YES / NO ── */
+#yn-question {
+  text-align: center;
+  font-size: 1.15rem;
+  color: var(--ink);
+  margin-bottom: 1.4rem;
+}
+#yn-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+.yn-btn {
+  padding: 0.85rem 3rem;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 2px;
+  border: 1px solid rgba(100,70,20,0.4);
+  background: transparent;
+  color: var(--amber);
+  transition: background 0.2s, color 0.2s;
+}
+.yn-btn:hover:not(:disabled) { background: var(--amber); color: #fff; }
+.yn-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* ── PHASE 3: COMPARE ── */
+#cmp-question {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--dim);
+  margin-bottom: 1.2rem;
+}
+#cmp-cards {
+  display: flex;
+  gap: 1.2rem;
+}
+.cmp-card {
+  flex: 1;
+  padding: 1.2rem 1.3rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  background: #faf7f1;
+  transition: border-color 0.2s, box-shadow 0.2s, opacity 0.5s;
+}
+.cmp-card:hover { border-color: var(--amber); box-shadow: 0 2px 14px rgba(100,70,20,0.1); }
+.cmp-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--amber);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+.cmp-desc {
+  font-size: 0.9rem;
+  color: var(--ink);
+  line-height: 1.65;
+}
+
+/* ── END SCREEN PHASE BREAKDOWN ── */
+.phase-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  max-width: 420px;
+  margin: 0.4rem auto;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(100,80,40,0.1);
+  padding-bottom: 0.35rem;
+}
+.phase-row-label { color: var(--dim); }
+.phase-row-score { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+  <div id="game-panel">
+
+    <div id="game-header">
+      <span id="game-title">Aesthetic Assessment - Geoengineering</span>
+      <span id="round-indicator">Phase <span id="cur-phase">1</span> - Round <span id="cur-round">1</span> / 5</span>
+    </div>
+    <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
+
+    <div id="subject-display">
+      <div id="subject-title"></div>
+      <div id="subject-desc"></div>
+    </div>
+
+    <div id="rating-area">
+      <div id="rating-labels">
+        <span>1 - No Aesthetic Value</span>
+        <span>5 - Maximum Aesthetic Value</span>
+      </div>
+      <input type="range" id="rating-slider" min="1" max="5" value="3" step="1">
+      <div id="star-display">
+        <span class="star" data-v="1">★</span>
+        <span class="star" data-v="2">★</span>
+        <span class="star" data-v="3">★</span>
+        <span class="star" data-v="4">★</span>
+        <span class="star" data-v="5">★</span>
+      </div>
+    </div>
+
+    <button id="submit-btn">Submit Rating</button>
+
+    <!-- Phase 2: Yes / No -->
+    <div id="phase2-controls" style="display:none">
+      <div id="yn-question">Does this have maximum aesthetic value?</div>
+      <div id="yn-buttons">
+        <button class="yn-btn" id="yn-yes">Yes</button>
+        <button class="yn-btn" id="yn-no">No</button>
+      </div>
+    </div>
+
+    <!-- Phase 3: Compare two solutions -->
+    <div id="phase3-area" style="display:none">
+      <div id="cmp-question">Which has greater aesthetic value?</div>
+      <div id="cmp-cards">
+        <div class="cmp-card" id="cmp-a">
+          <div class="cmp-title" id="cmp-a-title"></div>
+          <div class="cmp-desc"  id="cmp-a-desc"></div>
+        </div>
+        <div class="cmp-card" id="cmp-b">
+          <div class="cmp-title" id="cmp-b-title"></div>
+          <div class="cmp-desc"  id="cmp-b-desc"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="correct-hint"></div>
+
+  </div>
+</div>
+
+<div id="feedback-overlay">
+  <div id="feedback-text"></div>
+</div>
+
+<div id="end-screen">
+  <div id="final-display"></div>
+  <button id="restart-btn">Begin Again</button>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DATA
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const ITEMS = [
+  {
+    title: "Mangrove Restoration",
+    desc:  "A barren tidal mudflat reclaimed by planted mangrove seedlings, their arching roots weaving a living architecture at the water's edge",
+    score: 5
+  },
+  {
+    title: "Coral Reef Transplanting",
+    desc:  "Staghorn coral fragments nursed in underwater gardens and carefully affixed to bleached reef skeletons until color blooms back in the blue",
+    score: 5
+  },
+  {
+    title: "Prairie Reseeding",
+    desc:  "An abandoned coal extraction site blanketed with native wildflowers and grasses, humming with pollinators across rolling miles of reclaimed color",
+    score: 5
+  },
+  {
+    title: "Green Rooftop Garden",
+    desc:  "A downtown rooftop converted into terraced vegetable beds, pollinator hedgerows, and wildflower meadow strips above the city grid",
+    score: 4
+  },
+  {
+    title: "Living Shoreline",
+    desc:  "Oyster shell breakwaters and native cordgrass marsh replacing a crumbling grey seawall along a tidal estuary where birds wade the margins",
+    score: 4
+  },
+  {
+    title: "Bioswale Drainage Channel",
+    desc:  "A stormwater channel replanted with ornamental grasses, cardinal flowers, and blue iris winding through an urban neighborhood",
+    score: 4
+  },
+  {
+    title: "Offshore Wind Farm",
+    desc:  "Rows of white turbines turning slowly on the grey-blue horizon, their long blades sweeping slow arcs in the sea wind",
+    score: 3
+  },
+  {
+    title: "Floating Solar Array",
+    desc:  "A reservoir surface tiled with dark photovoltaic panels that shimmer and shift with the movement of the water beneath them",
+    score: 3
+  },
+  {
+    title: "Constructed Treatment Wetland",
+    desc:  "Engineered reed-bed pools processing municipal wastewater into clean water release, herons standing patient in the shallow margins",
+    score: 3
+  },
+  {
+    title: "Concrete Seawall Extension",
+    desc:  "A massive poured-concrete barrier pushed further into the sea to hold rising floodwaters back from a low-lying coastal city",
+    score: 2
+  },
+  {
+    title: "Direct Air Capture Plant",
+    desc:  "A grid of industrial fans and chemical contactor towers standing in a flat field, quietly pulling carbon dioxide out of the passing air",
+    score: 2
+  },
+  {
+    title: "Mine Tailings Reclamation",
+    desc:  "Compacted grey waste piles from a closed copper mine being graded flat and seeded with sparse drought-tolerant grass across the plain",
+    score: 2
+  },
+  {
+    title: "Stratospheric Aerosol Injection",
+    desc:  "High-altitude aircraft dispersing sulfur dioxide particles that diffuse into a uniform milky-white haze across the sky above the continent",
+    score: 1
+  },
+  {
+    title: "Ocean Iron Fertilization",
+    desc:  "Ships dumping iron sulphate slurry into the open ocean to trigger algae blooms invisible beneath an unbroken grey surface",
+    score: 1
+  },
+  {
+    title: "Underground CO₂ Sequestration",
+    desc:  "Wellheads and pipe manifolds injecting compressed carbon dioxide into sandstone aquifers several kilometers beneath a flat industrial plain",
+    score: 1
+  }
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+let phase        = 1;
+let roundInPhase = 0;
+let hits         = [0, 0, 0]; // per phase
+let deck1        = [];
+let deck2        = [];
+let deck3        = []; // array of [itemA, itemB] pairs
+let p3correct    = 0;  // index (0 or 1) of correct card in current phase-3 round
+let busy         = false;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  ELEMENTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const $panel        = document.getElementById('game-panel');
+const $curPhase     = document.getElementById('cur-phase');
+const $curRound     = document.getElementById('cur-round');
+const $gameTitle    = document.getElementById('game-title');
+const $progress     = document.getElementById('progress-fill');
+const $title        = document.getElementById('subject-title');
+const $desc         = document.getElementById('subject-desc');
+const $slider       = document.getElementById('rating-slider');
+const $stars        = document.querySelectorAll('.star');
+const $submitBtn    = document.getElementById('submit-btn');
+const $hint         = document.getElementById('correct-hint');
+const $fbOverlay    = document.getElementById('feedback-overlay');
+const $fbText       = document.getElementById('feedback-text');
+const $endScreen    = document.getElementById('end-screen');
+const $finalDisplay = document.getElementById('final-display');
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  BACKGROUND PARTICLES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const bgC   = document.getElementById('bg-canvas');
+const bgCtx = bgC.getContext('2d');
+let pts = [];
+
+function resizeBg() {
+  bgC.width  = window.innerWidth;
+  bgC.height = window.innerHeight;
+}
+resizeBg();
+window.addEventListener('resize', resizeBg);
+
+for (let i = 0; i < 90; i++) {
+  pts.push({
+    x:  Math.random() * window.innerWidth,
+    y:  Math.random() * window.innerHeight,
+    r:  Math.random() * 1.4 + 0.2,
+    b:  Math.random() * 0.45 + 0.05,
+    s:  Math.random() * 0.004 + 0.001,
+    ph: Math.random() * Math.PI * 2
+  });
+}
+
+(function drawBg(t) {
+  bgCtx.clearRect(0, 0, bgC.width, bgC.height);
+  for (const p of pts) {
+    const o = p.b + Math.sin(t * 0.001 * p.s * 1000 + p.ph) * 0.12;
+    bgCtx.beginPath();
+    bgCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    bgCtx.fillStyle = `rgba(100,75,30,${Math.max(0, o * 0.18)})`;
+    bgCtx.fill();
+  }
+  requestAnimationFrame(drawBg);
+})(0);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  UTILITIES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function rnd(lo, hi) { return lo + Math.random() * (hi - lo); }
+
+function wrapWords(el, text) {
+  el.innerHTML = text.split(' ').map(w =>
+    `<span class="word">${w} </span>`
+  ).join('');
+}
+
+function allWords() {
+  if (phase === 3)
+    return [...document.querySelectorAll('#cmp-a .word, #cmp-b .word')];
+  return [...document.querySelectorAll('#subject-display .word')];
+}
+
+function updateStars(v) {
+  $stars.forEach(s => {
+    const n = parseInt(s.dataset.v);
+    s.classList.toggle('lit',   n <= v);
+    s.classList.toggle('unlit', n >  v);
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  WORD ANIMATIONS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function animateCorrect(done) {
+  const words = allWords();
+  words.forEach((sp, i) => {
+    const angle = (rnd(360, 900)) * (Math.random() < 0.5 ? 1 : -1);
+    const tx = rnd(-1, 1) * (window.innerWidth  * 1.2 + 300);
+    const ty = rnd(-1, 1) * (window.innerHeight * 1.2 + 300);
+    setTimeout(() => {
+      sp.style.transition = `transform 0.85s cubic-bezier(0.15,0.85,0.55,1), opacity 0.85s ease`;
+      sp.style.transform  = `translate(${tx}px,${ty}px) rotate(${angle}deg) scale(0.05)`;
+      sp.style.opacity    = '0';
+    }, i * 55);
+  });
+  setTimeout(done, words.length * 55 + 950);
+}
+
+function animateIncorrect(done) {
+  const words  = allWords();
+  const angles = words.map(() => rnd(-18, 18));
+
+  // wobble
+  words.forEach((sp, i) => {
+    setTimeout(() => {
+      sp.style.transition = `transform 0.28s ease`;
+      sp.style.transform  = `rotate(${angles[i]}deg)`;
+    }, i * 45);
+  });
+
+  // fall
+  const fallAt = words.length * 45 + 480;
+  words.forEach((sp, i) => {
+    setTimeout(() => {
+      const a = angles[i] + rnd(-8, 8);
+      sp.style.transition = `transform 0.75s ease-in, opacity 0.75s ease-in`;
+      sp.style.transform  = `rotate(${a}deg) translateY(${window.innerHeight + 200}px)`;
+      sp.style.opacity    = '0';
+    }, fallAt + i * 28);
+  });
+
+  setTimeout(done, fallAt + words.length * 28 + 850);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  FEEDBACK TEXT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const PATRONIZING_HIGH = [
+  "You gave it a {r}. The correct value was {s}. Enthusiasm is sweet, but it is not a substitute for discernment.",
+  "A {r} for something worth a {s}. One wonders if you find shopping malls majestic.",
+  "You awarded {r} stars. The answer was {s}. Your generosity of spirit is noted, and gently pitied.",
+  "Interesting that you saw a {r} here. The rest of us managed a {s}. Perhaps lower your expectations - of yourself.",
+  "A {r}. Truly. The correct answer was {s}. You have confused function with beauty, which is a beginner's error.",
+];
+
+const PATRONIZING_LOW = [
+  "You gave it a {r}. It deserved a {s}. One suspects you have never looked at anything carefully.",
+  "A {r}? The correct answer was {s}. The world is offering you beauty and you are simply not accepting the invitation.",
+  "You rated this {r}. It was a {s}. Have you considered that your perception may be the problem?",
+  "The correct answer was {s}. Your {r} suggests you move through the world without really seeing it. How efficient.",
+  "A {r} for something worth a {s}. Your standards are so high they have become invisible, even to you.",
+];
+
+function patronize(rating, item) {
+  const diff = rating - item.score;
+  const pool = diff > 0 ? PATRONIZING_HIGH : PATRONIZING_LOW;
+  return pool[Math.floor(Math.random() * pool.length)]
+    .replace('{r}', rating)
+    .replace('{s}', item.score);
+}
+
+function animateWords(container, text, color, dir) {
+  text.split(' ').forEach((w, i) => {
+    const sp = document.createElement('span');
+    sp.textContent = w;
+    sp.style.cssText = `
+      display:inline-block;
+      margin-right:0.28em;
+      opacity:0;
+      transform: translateY(${dir}px);
+      transition: opacity 0.38s, transform 0.38s;
+      color: ${color};
+    `;
+    container.appendChild(sp);
+    setTimeout(() => {
+      sp.style.opacity   = '1';
+      sp.style.transform = 'none';
+    }, i * 65 + 80);
+  });
+  return text.split(' ').length;
+}
+
+function showFeedback(correct, rating, item, done, customMsg) {
+  $fbText.innerHTML = '';
+
+  if (correct) {
+    $fbText.style.cssText = `
+      font-family: 'Pacifico', cursive;
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      text-align: center; line-height: 1.6;
+      max-width: 720px; padding: 2rem;
+      text-shadow: 0 1px 8px rgba(60,160,40,0.2);
+    `;
+    animateWords($fbText, "You have subjectively judged correctly!", '#2a6a1a', 18);
+  } else {
+    $fbText.style.cssText = `
+      font-family: 'Pirata One', cursive;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      text-align: center; line-height: 1.7;
+      max-width: 760px; padding: 2rem;
+      text-shadow: 0 1px 10px rgba(140,0,0,0.3);
+    `;
+    const headerWords = animateWords($fbText, "You have subjectively judged incorrectly.", '#7a0a00', -18);
+    const br = document.createElement('div');
+    br.style.cssText = 'height:0.5em';
+    $fbText.appendChild(br);
+
+    const subDelay = headerWords * 65 + 200;
+    const explanation = customMsg || patronize(rating, item);
+    explanation.split(' ').forEach((w, i) => {
+      const sp = document.createElement('span');
+      sp.textContent = w;
+      sp.style.cssText = `
+        display:inline-block;
+        margin-right:0.28em;
+        font-size:0.72em;
+        opacity:0;
+        transform: translateY(-10px);
+        transition: opacity 0.35s, transform 0.35s;
+        color: #5a0800;
+      `;
+      $fbText.appendChild(sp);
+      setTimeout(() => {
+        sp.style.opacity   = '1';
+        sp.style.transform = 'none';
+      }, subDelay + i * 55);
+    });
+  }
+
+  $fbOverlay.style.cssText = 'display:flex; opacity:0; transition:opacity 0.3s; cursor:pointer; pointer-events:auto;';
+  requestAnimationFrame(() => { $fbOverlay.style.opacity = '1'; });
+
+  function dismiss() {
+    $fbOverlay.removeEventListener('click', dismiss);
+    document.removeEventListener('keydown', onKey);
+    $fbOverlay.style.opacity = '0';
+    setTimeout(() => { $fbOverlay.style.display = 'none'; done(); }, 380);
+  }
+  function onKey(e) { if (e.key === 'Enter') dismiss(); }
+
+  $fbOverlay.addEventListener('click', dismiss);
+  document.addEventListener('keydown', onKey);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  DECK CREATION
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function makePairs() {
+  // Sort descending by score; shuffle within each score group (3 items each)
+  const sorted = [...ITEMS].sort((a, b) => b.score - a.score);
+  for (let g = 0; g < 5; g++) {
+    const s = g * 3;
+    for (let i = 2; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [sorted[s+i], sorted[s+j]] = [sorted[s+j], sorted[s+i]];
+    }
+  }
+  // Pair top 5 (scores 5,5,5,4,4) with bottom 5 (scores 1,1,1,2,2)
+  const pairs = [];
+  for (let i = 0; i < 5; i++) {
+    const pair = [sorted[i], sorted[14 - i]];
+    if (Math.random() < 0.5) pair.reverse();
+    pairs.push(pair);
+  }
+  return pairs;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  PHASE UI SWITCHING
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const PHASE_LABELS = ['', 'Aesthetic Rating', 'Maximum Value Assessment', 'Comparative Judgment'];
+
+function showPhaseUI(p) {
+  $gameTitle.textContent = PHASE_LABELS[p];
+  $curPhase.textContent  = p;
+  document.getElementById('subject-display').style.display    = p < 3  ? '' : 'none';
+  document.getElementById('rating-area').style.display        = p === 1 ? '' : 'none';
+  document.getElementById('submit-btn').style.display         = p === 1 ? '' : 'none';
+  document.getElementById('phase2-controls').style.display    = p === 2 ? '' : 'none';
+  document.getElementById('phase3-area').style.display        = p === 3 ? '' : 'none';
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  ROUND MANAGEMENT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+function advanceRound() {
+  roundInPhase++;
+  if (roundInPhase >= 5) {
+    roundInPhase = 0;
+    phase++;
+    if (phase > 3) { showEnd(); return; }
+    showPhaseUI(phase);
+  }
+  $panel.style.opacity = '0';
+  setTimeout(() => { $panel.style.opacity = '1'; startRound(); }, 320);
+}
+
+function startRound() {
+  busy = false;
+  $curRound.textContent  = roundInPhase + 1;
+  $progress.style.width  = `${((phase - 1) * 5 + roundInPhase) / 15 * 100}%`;
+  $hint.style.opacity    = '0';
+  if (phase === 1) startPhase1Round();
+  else if (phase === 2) startPhase2Round();
+  else startPhase3Round();
+}
+
+function loadSubjectDisplay(item) {
+  $title.innerHTML = '';
+  $desc.innerHTML  = '';
+  $title.style.opacity = '0';
+  $desc.style.opacity  = '0';
+  wrapWords($title, item.title);
+  wrapWords($desc,  item.desc);
+  requestAnimationFrame(() => {
+    $title.style.transition = 'opacity 0.55s';
+    $title.style.opacity    = '1';
+    $desc.style.transition  = 'opacity 0.55s 0.18s';
+    $desc.style.opacity     = '1';
+  });
+}
+
+// ── Phase 1 ──────────────────────────────────────────────────────────────────
+function startPhase1Round() {
+  $slider.value = '3';
+  updateStars(3);
+  $submitBtn.disabled = false;
+  loadSubjectDisplay(deck1[roundInPhase]);
+}
+
+function onSubmit() {
+  if (busy) return;
+  busy = true;
+  const item   = deck1[roundInPhase];
+  const rating = parseInt($slider.value);
+  const ok     = rating === item.score;
+  if (ok) hits[0]++;
+  $submitBtn.disabled = true;
+  $hint.textContent   = `Aesthetic value: ${item.score} / 5`;
+  $hint.style.color   = ok ? '#6a4a10' : '#8a3820';
+  $hint.style.opacity = '1';
+  if (ok) animateCorrect(() => showFeedback(true,  rating, item, advanceRound));
+  else    animateIncorrect(() => showFeedback(false, rating, item, advanceRound));
+}
+
+const PATRONIZING_P2_YES = [
+  "You said Yes. The aesthetic value was {s}/5. Enthusiasm is not the same as perception.",
+  "You declared maximum value. The correct answer was No - it was a {s}/5. One wonders what you thought you were seeing.",
+  "Yes, you said. The aesthetic value was {s}/5. You have confused the presence of a thing with its beauty.",
+  "You said Yes. It was a {s}/5. Your threshold for maximum value appears to have no bottom.",
+  "A Yes for something worth {s}/5. You would find a parking garage sublime.",
+];
+
+const PATRONIZING_P2_NO = [
+  "You said No. The aesthetic value was {s}/5. Something beautiful stood before you and you declined to notice.",
+  "No, you said. The correct answer was Yes - it was a {s}/5. Your eye passed over it without comprehension.",
+  "You said No. It was a {s}/5. The capacity for appreciation appears to be resting.",
+  "You said No to a {s}/5. You are withholding judgment from something that has already earned it.",
+  "No. For a {s}/5. Either your standards are unreachable or you were not paying attention. Neither reflects well.",
+];
+
+// ── Phase 2 ──────────────────────────────────────────────────────────────────
+function startPhase2Round() {
+  document.querySelectorAll('.yn-btn').forEach(b => b.disabled = false);
+  loadSubjectDisplay(deck2[roundInPhase]);
+}
+
+function handlePhase2(answer) {
+  if (busy) return;
+  busy = true;
+  document.querySelectorAll('.yn-btn').forEach(b => b.disabled = true);
+  const item    = deck2[roundInPhase];
+  const isMax   = item.score > 3;
+  const ok      = (answer === 'yes') === isMax;
+  if (ok) hits[1]++;
+  $hint.textContent   = `Aesthetic value: ${item.score} / 5 - ${isMax ? 'Maximum' : 'Not maximum'}`;
+  $hint.style.color   = ok ? '#6a4a10' : '#8a3820';
+  $hint.style.opacity = '1';
+  if (ok) {
+    animateCorrect(() => showFeedback(true, null, item, advanceRound));
+  } else {
+    const pool = answer === 'yes' ? PATRONIZING_P2_YES : PATRONIZING_P2_NO;
+    const msg  = pool[Math.floor(Math.random() * pool.length)].replace('{s}', item.score);
+    animateIncorrect(() => showFeedback(false, null, item, advanceRound, msg));
+  }
+}
+
+// ── Phase 3 ──────────────────────────────────────────────────────────────────
+function startPhase3Round() {
+  const [a, b] = deck3[roundInPhase];
+  p3correct = a.score >= b.score ? 0 : 1;
+
+  const cardA = document.getElementById('cmp-a');
+  const cardB = document.getElementById('cmp-b');
+  cardA.style.pointerEvents = '';
+  cardB.style.pointerEvents = '';
+
+  // Reset word transforms from previous round
+  document.querySelectorAll('#cmp-a .word, #cmp-b .word').forEach(w => {
+    w.style.cssText = '';
+  });
+
+  wrapWords(document.getElementById('cmp-a-title'), a.title);
+  wrapWords(document.getElementById('cmp-a-desc'),  a.desc);
+  wrapWords(document.getElementById('cmp-b-title'), b.title);
+  wrapWords(document.getElementById('cmp-b-desc'),  b.desc);
+
+  cardA.style.opacity = '0';
+  cardB.style.opacity = '0';
+  requestAnimationFrame(() => {
+    cardA.style.transition = 'border-color 0.2s, box-shadow 0.2s, opacity 0.5s';
+    cardA.style.opacity    = '1';
+    cardB.style.transition = 'border-color 0.2s, box-shadow 0.2s, opacity 0.5s 0.15s';
+    cardB.style.opacity    = '1';
+  });
+}
+
+const PATRONIZING_COMPARE = [
+  "You chose {wrong}. The correct answer was {correct} at {score}/5. Look harder next time.",
+  "{correct} ({score}/5) was right there. You looked at it. And yet you chose {wrong}.",
+  "The aesthetic superiority of {correct} should have been self-evident. It was not, apparently, to you.",
+  "Selecting {wrong} over {correct} ({score}/5) suggests a fundamental confusion about what beauty is.",
+  "One is left speechless that {correct} ({score}/5) lost to {wrong} in your estimation.",
+];
+
+function handlePhase3(chosen) {
+  if (busy) return;
+  busy = true;
+  document.getElementById('cmp-a').style.pointerEvents = 'none';
+  document.getElementById('cmp-b').style.pointerEvents = 'none';
+
+  const pair        = deck3[roundInPhase];
+  const ok          = chosen === p3correct;
+  const rightItem   = pair[p3correct];
+  const wrongItem   = pair[chosen];
+  if (ok) hits[2]++;
+
+  $hint.textContent   = `Higher value: ${rightItem.title} (${rightItem.score}/5)`;
+  $hint.style.color   = ok ? '#6a4a10' : '#8a3820';
+  $hint.style.opacity = '1';
+
+  if (ok) {
+    animateCorrect(() => showFeedback(true, rightItem.score, rightItem, advanceRound));
+  } else {
+    const customMsg = PATRONIZING_COMPARE[Math.floor(Math.random() * PATRONIZING_COMPARE.length)]
+      .replace('{wrong}',   wrongItem.title)
+      .replace('{correct}', rightItem.title)
+      .replace('{score}',   rightItem.score);
+    animateIncorrect(() => showFeedback(false, wrongItem.score, rightItem, advanceRound, customMsg));
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  END SCREEN
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+const UGLY_FONTS = [
+  '"Comic Sans MS","Chalkboard SE",cursive',
+  'Impact,"Arial Narrow",sans-serif',
+  '"Courier New",Courier,monospace',
+  '"Arial Black",Gadget,sans-serif',
+  'Papyrus,fantasy',
+  '"Trebuchet MS","Lucida Sans",sans-serif',
+];
+
+const SCORE_LABELS = ['','No Aesthetic Value','Minimal Aesthetic Value','Moderate Aesthetic Value','High Aesthetic Value','Maximum Aesthetic Value'];
+
+const SCORE_MESSAGES = [
+  '',
+  'You should work on developing your sense of aesthetics.',
+  'You have a modest flicker of aesthetic awareness. Glimpses of value appear and then vanish.',
+  'Your aesthetic judgment is meh. You recognize beauty when it stands before you, sometimes.',
+  'You can judge aesthetics with a level of sophistication that allows you to discern the aesthetic dimensions of the engineered world with considerable clarity and precision, but you aren\'t perfect yet.',
+  'You got the maximum aesthetic value. Science is all about subjectivity and value judgment, and you excel at it.',
+];
+
+function finalScore(n) {
+  // n is out of 10 (phases 2 + 3 only)
+  if (n <= 2)  return 1;
+  if (n <= 4)  return 2;
+  if (n <= 6)  return 3;
+  if (n <= 8)  return 4;
+  return 5;
+}
+
+function addPhaseBreakdown(container, fg) {
+  const reveal = el('div', `
+    max-width:520px; margin:1.8rem auto 0;
+    font-size:1rem; color:${fg}; line-height:1.7; opacity:0.9;
+    border-top:1px solid rgba(100,80,40,0.15); padding-top:1.4rem;
+  `);
+  reveal.textContent = 'Phase 1 was not graded. Aesthetic value cannot be reduced to a number on a slider. It never could.';
+  container.appendChild(reveal);
+
+  const wrap = el('div', `max-width:420px; margin:1rem auto 0; width:100%;`);
+
+  // Phase 1 - struck out, ungraded
+  const row0 = document.createElement('div');
+  row0.className = 'phase-row';
+  const lbl0 = el('span', `color:${fg}; opacity:0.35; font-size:0.88rem; text-decoration:line-through;`);
+  lbl0.textContent = 'Aesthetic Rating (1–5)';
+  const scr0 = el('span', `color:${fg}; font-size:0.88rem; opacity:0.35;`);
+  scr0.textContent = 'not graded';
+  row0.appendChild(lbl0);
+  row0.appendChild(scr0);
+  wrap.appendChild(row0);
+
+  // Phases 2 and 3 - graded
+  const labels = ['Maximum Value Recognition', 'Comparative Judgment'];
+  [hits[1], hits[2]].forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'phase-row';
+    const lbl = el('span', `color:${fg}; opacity:0.65; font-size:0.88rem;`);
+    lbl.textContent = labels[i];
+    const scr = el('span', `color:${fg}; font-weight:600; font-size:0.95rem;`);
+    scr.textContent = `${h} / 5`;
+    row.appendChild(lbl);
+    row.appendChild(scr);
+    wrap.appendChild(row);
+  });
+  container.appendChild(wrap);
+}
+
+function showEnd() {
+  $progress.style.width = '100%';
+
+  const total = hits[1] + hits[2]; // phase 1 was never graded
+  const score = finalScore(total);
+  const label = SCORE_LABELS[score];
+  const msg   = SCORE_MESSAGES[score];
+
+  $finalDisplay.innerHTML = '';
+
+  if (score === 5) {
+    // ── Pristine, beautiful render ──
+    $endScreen.style.background = '#faf7f1';
+
+    const h = el('div', `
+      font-family:'Dancing Script',cursive;
+      font-size:clamp(2.2rem,5vw,3.6rem);
+      color:#6a4a10;
+      margin-bottom:0.4rem;
+    `);
+    h.textContent = `Aesthetic Score: 5 / 5`;
+    $finalDisplay.appendChild(h);
+
+    const orn = el('div', `
+      font-size:0.9rem;
+      color:rgba(100,75,30,0.35);
+      margin-bottom:1rem;
+    `);
+    orn.textContent = '✦   ✦   ✦';
+    $finalDisplay.appendChild(orn);
+
+    const sub = el('div', `
+      font-family:'IM Fell English',Georgia,serif;
+      font-size:1.2rem;
+      color:#7a5a20;
+      margin-bottom:1.6rem;
+    `);
+    sub.textContent = label;
+    $finalDisplay.appendChild(sub);
+
+    const body = el('div', `
+      font-family:'Crimson Text',Georgia,serif;
+      font-size:1.25rem;
+      color:#2a1f0f; line-height:1.85;
+      max-width:560px; margin:0 auto;
+    `);
+    body.textContent = msg;
+    $finalDisplay.appendChild(body);
+
+    addPhaseBreakdown($finalDisplay, '#6a4a10');
+
+  } else if (score === 1) {
+    // ── Ugly, degraded render ──
+    $endScreen.style.background = '#f4efe6';
+
+    const headText = `Aesthetic Score: 1 / 5 - ${label}`;
+    const hWrap = el('div', 'margin-bottom:1.5rem; font-size:1rem; max-width:680px;');
+    headText.split(' ').forEach(w => {
+      const s = el('span', `
+        display:inline-block;
+        font-family:${UGLY_FONTS[Math.floor(Math.random()*UGLY_FONTS.length)]};
+        font-size:${rnd(1.2, 2.6)}rem;
+        transform: rotate(${rnd(-14,14)}deg) skew(${rnd(-6,6)}deg);
+        color: hsl(${rnd(5,30)},${rnd(30,55)}%,${rnd(22,42)}%);
+        margin:0 0.1em;
+      `);
+      s.textContent = w;
+      hWrap.appendChild(s);
+    });
+    $finalDisplay.appendChild(hWrap);
+
+    const mWrap = el('div', 'max-width:600px; margin:0 auto; line-height:2.2; font-size:1rem;');
+    msg.split(' ').forEach(w => {
+      const s = el('span', `
+        display:inline-block;
+        font-family:${UGLY_FONTS[Math.floor(Math.random()*UGLY_FONTS.length)]};
+        transform: rotate(${rnd(-8,8)}deg);
+        color: hsl(${rnd(0,25)},${rnd(25,45)}%,${rnd(20,38)}%);
+        margin:0 0.1em;
+        font-size:${rnd(0.85,1.1)}rem;
+      `);
+      s.textContent = w;
+      mWrap.appendChild(s);
+    });
+    $finalDisplay.appendChild(mWrap);
+
+    addPhaseBreakdown($finalDisplay, '#5a4a38');
+
+  } else {
+    // ── Intermediate renders ──
+    const palettes = {
+      2: { fg:'#5a4a38', accent:'#7a5a30', bg:'#f4efe6' },
+      3: { fg:'#3a2e20', accent:'#7a5820', bg:'#f8f4ee' },
+      4: { fg:'#2a1f0f', accent:'#6a4a10', bg:'#faf7f1' },
+    };
+    const pal = palettes[score];
+    $endScreen.style.background = pal.bg;
+
+    const sizes = { 2:'1.8rem', 3:'2.1rem', 4:'2.5rem' };
+
+    const h = el('div', `
+      font-size:${sizes[score]};
+      color:${pal.accent};
+      margin-bottom:0.5rem;
+    `);
+    h.textContent = `Aesthetic Score: ${score} / 5`;
+    $finalDisplay.appendChild(h);
+
+    const sub = el('div', `
+      font-size:1rem;
+      color:${pal.fg};
+      opacity:0.8;
+      margin-bottom:1.5rem;
+    `);
+    sub.textContent = label;
+    $finalDisplay.appendChild(sub);
+
+    const body = el('div', `
+      font-size:1.15rem;
+      color:${pal.fg};
+      max-width:560px;
+      margin:0 auto;
+      line-height:1.8;
+    `);
+    body.textContent = msg;
+    $finalDisplay.appendChild(body);
+
+    addPhaseBreakdown($finalDisplay, pal.fg);
+  }
+
+  $endScreen.style.cssText += '; display:flex; opacity:0; transition:opacity 0.9s;';
+  requestAnimationFrame(() => { $endScreen.style.opacity = '1'; });
+}
+
+function el(tag, css) {
+  const e = document.createElement(tag);
+  e.style.cssText = css;
+  return e;
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  EVENTS & INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+$slider.addEventListener('input', () => updateStars(parseInt($slider.value)));
+$submitBtn.addEventListener('click', onSubmit);
+document.getElementById('yn-yes').addEventListener('click', () => handlePhase2('yes'));
+document.getElementById('yn-no').addEventListener('click',  () => handlePhase2('no'));
+document.getElementById('cmp-a').addEventListener('click', () => handlePhase3(0));
+document.getElementById('cmp-b').addEventListener('click', () => handlePhase3(1));
+
+document.getElementById('restart-btn').addEventListener('click', () => {
+  $endScreen.style.display = 'none';
+  init();
+});
+
+function init() {
+  const all = shuffle(ITEMS);
+  deck1 = all.slice(0, 5);
+  const usedInDeck1 = new Set(deck1);
+  deck2 = shuffle(ITEMS.filter(it => !usedInDeck1.has(it) && it.score !== 3)).slice(0, 5);
+  deck3 = makePairs();
+  phase        = 1;
+  roundInPhase = 0;
+  hits         = [0, 0, 0];
+  busy         = false;
+  updateStars(3);
+  showPhaseUI(1);
+  startRound();
+}
+
+init();
+</script>
+</body>
+</html>
