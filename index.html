@@ -82,16 +82,18 @@ html, body {
   outline-offset: -2px;
 }
 
-/* Labels at the bottom of each half */
+/* Labels row below the image */
+#path-labels {
+  display: flex;
+  width: min(860px, 94vw);
+  justify-content: space-between;
+}
+
 .path-label {
-  position: absolute;
-  bottom: 0;
+  width: 48%;
   text-align: center;
   pointer-events: none;
 }
-
-#label-left  { left: 0;   width: 48%; }
-#label-right { right: 0;  width: 48%; }
 
 .path-label .label-title {
   display: block;
@@ -110,9 +112,6 @@ html, body {
   font-style: italic;
   line-height: 1.4;
 }
-
-#overlay-left:hover  ~ #label-left  .label-title,
-#overlay-right:hover ~ #label-right .label-title { color: #b07d2a; }
 
 .ornament {
   color: rgba(100, 80, 40, 0.28);
@@ -133,7 +132,9 @@ html, body {
 
     <a id="overlay-left"  class="path-overlay" href="aesthetics.html" aria-label="Aesthetics game"></a>
     <a id="overlay-right" class="path-overlay" href="lottery.html" aria-label="Lottery Tickets game"></a>
+  </div>
 
+  <div id="path-labels">
     <div class="path-label" id="label-left">
       <span class="label-title">Aesthetics</span>
       <span class="label-sub">Rate the beauty of<br>geoengineering solutions</span>
@@ -181,6 +182,13 @@ for (let i = 0; i < 80; i++) {
   }
   requestAnimationFrame(drawBg);
 })(0);
+
+[['overlay-left','label-left'],['overlay-right','label-right']].forEach(([ol, lb]) => {
+  const overlay = document.getElementById(ol);
+  const title   = document.getElementById(lb).querySelector('.label-title');
+  overlay.addEventListener('mouseenter', () => title.style.color = '#b07d2a');
+  overlay.addEventListener('mouseleave', () => title.style.color = '');
+});
 </script>
 </body>
 </html>
