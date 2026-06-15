@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYSSLS LOTTERY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #080808;
+  --ink:     #ffffff;
+  --green:   #00ff44;
+  --yellow:  #ffff00;
+  --pink:    #ff0080;
+  --blue:    #00bfff;
+  --red:     #ff2020;
+  --gold:    #ffd700;
+  --dim:     #888888;
+}
+
+html, body {
+  width: 100%; min-height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 20px;
+}
+
+#bg-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+#app {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 1.2rem 1rem 3rem;
+  gap: 0.9rem;
+}
+
+/* ── CASH MONEY ── */
+#cash-board {
+  background: #000;
+  border: 3px solid var(--gold);
+  padding: 0.4rem 2.8rem 0.5rem;
+  text-align: center;
+  min-width: 260px;
+}
+#cash-label {
+  font-size: 1rem;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+#cash-amount {
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  color: var(--green);
+  line-height: 1;
+  letter-spacing: 0.04em;
+}
+#wins-row {
+  font-size: 0.95rem;
+  color: var(--dim);
+  letter-spacing: 0.15em;
+}
+
+/* ── TICKET ── */
+#ticket {
+  width: min(660px, 96vw);
+  background: #ffefe2;
+  border: 3px solid var(--t-color, #ff2020);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── TICKET HEAD ── */
+#ticket-head {
+  background: var(--t-color, #ff2020);
+  padding: 0.4rem 1.4rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+.badges { display: flex; gap: 0.6rem; align-items: center; }
+.badge {
+  font-size: 1.1rem;
+  letter-spacing: 0.1em;
+  padding: 0 0.4rem;
+  background: rgba(0,0,0,0.45);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.4);
+}
+#payout-right {
+  font-size: 1.2rem;
+  color: #fff;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* ── SCRATCH TRACKER ── */
+#scratch-tracker {
+  padding: 0.2rem 1.4rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  color: rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.3);
+  border-bottom: 1px solid rgba(0,0,0,0.4);
+  white-space: nowrap;
+}
+#scratch-bar {
+  color: var(--t-color, #ff2020);
+  letter-spacing: 0;
+}
+
+/* ── TICKET BODY ── */
+#ticket-body { padding: 0.9rem 1.4rem 1.1rem; }
+
+#clue-area { margin-bottom: 0.9rem; }
+#clue-label {
+  font-size: 0.9rem;
+  letter-spacing: 0.25em;
+  color: var(--t-color, #ff2020);
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+}
+#clue-text {
+  font-size: clamp(1.1rem, 2.2vw, 1.35rem);
+  color: #2b2c70;
+  line-height: 1.5;
+  min-height: 2.8rem;
+}
+
+/* ── SCRATCH AREA ── */
+#scratch-wrap {
+  position: relative;
+  min-height: 80px;
+  background: #b0ffb8;
+  border: 1px solid rgba(130, 255, 108, 0.1);
+  margin-bottom: 0;
+  user-select: none;
+  cursor: crosshair;
+  overflow: hidden;
+}
+
+#letters-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  padding: 0.9rem 1rem;
+  gap: 5px;
+}
+.letter-cell {
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-weight: normal;
+  color: var(--yellow);
+  background: #1a1500;
+  border: 1px solid rgba(255,255,0,0.25);
+  flex-shrink: 0;
+}
+.letter-gap {
+  flex-shrink: 0;
+  background: transparent;
+}
+
+#scratch-canvas {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+#scratch-hint {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: rgba(255,255,255,0.7);
+  pointer-events: none;
+  transition: opacity 0.3s;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+/* ── TICKET FOOT ── */
+#ticket-foot {
+  padding: 0.35rem 1.4rem 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed rgb(255, 235, 235);
+  background: #fcfe72;
+}
+.barcode { display:flex; gap:2px; align-items:flex-end; height:24px; }
+.bbar { background: rgb(0, 0, 0); }
+#ticket-id { font-size: 0.8rem; color: var(--dim); }
+
+/* ── RESULT OVERLAY (inside ticket) ── */
+#result-panel {
+  display: none;
+  position: absolute; inset: 0; z-index: 20;
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; gap: 0.5rem;
+  padding: 1.5rem;
+}
+#result-title {
+  font-size: clamp(2.2rem, 7vw, 4rem);
+  line-height: 1;
+  letter-spacing: 0.05em;
+}
+#result-word {
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+  letter-spacing: 0.1em;
+}
+#result-earn {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  line-height: 1;
+}
+#result-sub { font-size: 1.1rem; color: #aaa; }
+#result-continue {
+  margin-top: 0.4rem;
+  padding: 0.3rem 1.6rem;
+  font-family: 'VT323', monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 2px solid currentColor;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+#result-continue:hover { background: rgba(255,255,255,0.12); }
+
+/* ── GUESS AREA (BELOW TICKET) ── */
+#guess-area {
+  width: min(660px, 96vw);
+  display: flex;
+  gap: 0;
+  border: 2px solid var(--t-color, #ff2020);
+}
+#guess-input {
+  flex: 1;
+  padding: 0.45rem 0.8rem;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 1.5rem;
+  background: #000;
+  color: var(--yellow);
+  border: none;
+  outline: none;
+  letter-spacing: 0.08em;
+}
+#guess-input::placeholder { color: rgba(255,255,0,0.3); }
+#guess-input.wrong { animation: shake 0.35s ease; color: var(--red); }
+@keyframes shake {
+  0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 50%{transform:translateX(6px)} 75%{transform:translateX(-4px)}
+}
+#submit-btn {
+  padding: 0.45rem 1.2rem;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #000;
+  background: var(--t-color, #ff2020);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+#submit-btn:hover:not(:disabled) { opacity: 0.8; }
+#submit-btn:disabled { opacity: 0.25; cursor: default; }
+
+/* ── SHOP ── */
+#shop { width: min(660px, 96vw); }
+#shop-title {
+  font-size: 1rem;
+  letter-spacing: 0.35em;
+  color: var(--dim);
+  text-align: center;
+  margin-bottom: 0.55rem;
+  text-transform: uppercase;
+}
+#shop-tiers {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 0;
+  border: 2px solid #333;
+}
+@media(max-width:480px) { #shop-tiers { grid-template-columns: repeat(2,1fr); } }
+.tier-btn {
+  padding: 0.55rem 0.3rem;
+  border: none;
+  border-right: 1px solid #333;
+  background: #000;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s;
+  font-family: 'VT323', monospace;
+}
+.tier-btn:last-child { border-right: none; }
+.tier-btn:not(:disabled):hover { background: #1a1a1a; }
+.tier-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.tier-name { font-size: 1.2rem; letter-spacing: 0.08em; text-transform: uppercase; display:block; }
+.tier-cost { font-size: 0.95rem; display:block; margin-top:0.05rem; }
+.tier-rate { font-size: 0.85rem; display:block; color: var(--dim); }
+
+/* ── MILESTONE ── */
+#milestone {
+  position: fixed; top: 0.8rem; left: 50%;
+  transform: translateX(-50%) translateY(-120px);
+  background: #000;
+  border: 3px solid var(--gold);
+  padding: 0.5rem 1.8rem;
+  z-index: 100; pointer-events: none;
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+  text-align: center;
+  min-width: 260px;
+}
+#milestone.show { transform: translateX(-50%) translateY(0); }
+#milestone-title { font-size: 1.4rem; letter-spacing: 0.2em; color: var(--gold); text-transform: uppercase; }
+#milestone-body  { font-size: 1.1rem; color: #ccc; }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<div id="app">
+
+  <div id="cash-board">
+    <div id="cash-label">★ Cash Money ★</div>
+    <div id="cash-amount">$0.00</div>
+    <div id="wins-row">WINS: <span id="win-count">0</span></div>
+  </div>
+
+  <div id="ticket">
+    <div id="ticket-head">
+      <div class="badges">
+        <span class="badge" id="badge-tier">BASIC</span>
+      </div>
+      <div id="payout-right">WIN UP TO <span id="payout-amount">$10.00</span></div>
+    </div>
+
+    <div id="scratch-tracker">
+      SCRATCHED: <span id="scratch-num">0</span>/<span id="scratch-den">0</span>&nbsp;&nbsp;<span id="scratch-bar">░░░░░░░░░░░░</span>
+    </div>
+
+    <div id="ticket-body">
+      <div id="clue-area">
+        <div id="clue-label">▶ CLUE</div>
+        <div id="clue-text"></div>
+      </div>
+      <div id="scratch-wrap">
+        <div id="letters-display"></div>
+        <canvas id="scratch-canvas"></canvas>
+        <div id="scratch-hint">[ SCRATCH TO REVEAL ]</div>
+      </div>
+    </div>
+
+    <div id="ticket-foot">
+      <div class="barcode" id="barcode"></div>
+      <div id="ticket-id">TKT-000000</div>
+    </div>
+
+    <div id="result-panel">
+      <div id="result-title"></div>
+      <div id="result-word"></div>
+      <div id="result-earn"></div>
+      <div id="result-sub"></div>
+      <button id="result-continue"><span>[ BUY ANOTHER TICKET ]</span></button>
+    </div>
+  </div>
+
+  <div id="guess-area">
+    <input type="text" id="guess-input" placeholder="TYPE THE TERM..." autocomplete="off" spellcheck="false">
+    <button id="submit-btn">SUBMIT</button>
+  </div>
+
+  <div id="shop">
+    <div id="shop-title">-- TICKET SHOP --</div>
+    <div id="shop-tiers"></div>
+  </div>
+
+</div>
+
+<div id="milestone">
+  <div id="milestone-title"></div>
+  <div id="milestone-body"></div>
+</div>
+
+<script>
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// VOCABULARY - sourced from nyssls.info/index.php/Earth_and_Space_Science
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const VOCAB = [
+  // HS-ESS1-1
+  { word:"NUCLEAR FUSION",         hint:"Process in the Sun's core that releases energy, powering our solar system",                       std:"HS-ESS1-1" },
+  { word:"SOLAR RADIATION",        hint:"Energy emitted by the Sun that travels through space and drives Earth's climate systems",          std:"HS-ESS1-1" },
+  { word:"SOLAR FLARES",           hint:"Sudden disruptions in solar activity that produce space weather events",                           std:"HS-ESS1-1" },
+  { word:"SUNSPOT CYCLE",          hint:"Recurring pattern of solar magnetic activity spanning approximately 11 years",                     std:"HS-ESS1-1" },
+  // HS-ESS1-2
+  { word:"BIG BANG",               hint:"The cosmic origin event supported by red shift observations and microwave background radiation",    std:"HS-ESS1-2" },
+  { word:"RED SHIFT",              hint:"The shift of light from distant galaxies indicating the universe is currently expanding",          std:"HS-ESS1-2" },
+  { word:"MICROWAVE BACKGROUND",   hint:"The remnant radiation from the Big Bang that permeates the entire observable universe",            std:"HS-ESS1-2" },
+  { word:"EMISSION SPECTRA",       hint:"Characteristic light frequencies emitted by elements, allowing identification of stars' composition", std:"HS-ESS1-2" },
+  { word:"LIGHT SPECTRA",          hint:"Used to identify the compositional elements of stars, their movements, and their distances from Earth", std:"HS-ESS1-2" },
+  // HS-ESS1-3
+  { word:"NUCLEOSYNTHESIS",        hint:"The process by which stars produce heavier elements over their life cycle through nuclear reactions", std:"HS-ESS1-3" },
+  { word:"SUPERNOVA",              hint:"A catastrophic stellar explosion stage where elements heavier than iron are produced and distributed", std:"HS-ESS1-3" },
+  { word:"INTERSTELLAR GASES",     hint:"Gas matter between stars consisting primarily of hydrogen and helium formed at the Big Bang",       std:"HS-ESS1-3" },
+  // HS-ESS2-1
+  { word:"PLATE TECTONICS",        hint:"The unifying theory explaining past and current movements of Earth's lithospheric plates",          std:"HS-ESS2-1" },
+  { word:"VOLCANISM",              hint:"Volcanic activity that acts as a constructive surface process building new landforms",              std:"HS-ESS2-1" },
+  { word:"TECTONIC UPLIFT",        hint:"The raising of land masses by tectonic forces, creating mountains and plateaus",                   std:"HS-ESS2-1" },
+  { word:"SUBDUCTION",             hint:"Destructive process where a denser tectonic plate slides beneath a less dense plate into the mantle", std:"HS-ESS2-1" },
+  { word:"COASTAL EROSION",        hint:"The wearing away of coastal land by wave action and other water-driven surface processes",          std:"HS-ESS2-1" },
+  { word:"WEATHERING",             hint:"Physical and chemical breakdown of rocks at Earth's surface, a key destructive surface process",    std:"HS-ESS2-1" },
+  // HS-ESS2-3
+  { word:"THERMAL CONVECTION",     hint:"The cycling of matter due to outward energy flow from Earth's interior and gravitational forces",   std:"HS-ESS2-3" },
+  { word:"SEISMIC WAVES",          hint:"Waves used by geologists to probe Earth's deep internal structure by measuring reflections",        std:"HS-ESS2-3" },
+  { word:"MANTLE CONVECTION",      hint:"Movement in Earth's mantle driven by heat that is the surface expression driving plate tectonics",  std:"HS-ESS2-3" },
+  { word:"INNER CORE",             hint:"The hot but solid innermost layer of Earth's structure, composed primarily of iron and nickel",     std:"HS-ESS2-3" },
+  { word:"OUTER CORE",             hint:"The liquid layer of Earth between the mantle and inner core, generating Earth's magnetic field",   std:"HS-ESS2-3" },
+  { word:"ROCK CYCLE",             hint:"The constant recycling of Earth's materials through surface and interior processes",                std:"HS-ESS2-3" },
+  { word:"MINERALS",               hint:"The building blocks of igneous, metamorphic, and sedimentary rocks",                               std:"HS-ESS2-3" },
+  { word:"IGNEOUS ROCKS",          hint:"Rocks formed from cooling and solidifying magma, one of three rock types in the rock cycle",       std:"HS-ESS2-3" },
+  { word:"METAMORPHIC ROCKS",      hint:"Rocks transformed by heat and pressure deep within the Earth as part of the rock cycle",           std:"HS-ESS2-3" },
+  { word:"SEDIMENTARY ROCKS",      hint:"Rocks formed from deposited sediment at Earth's surface, recording past environmental conditions", std:"HS-ESS2-3" },
+  // HS-ESS2-4
+  { word:"CLIMATE CHANGE",         hint:"Long-term shifts in global temperature and weather patterns from alterations in Earth's energy balance", std:"HS-ESS2-4" },
+  { word:"OCEAN CIRCULATION",      hint:"Water movement patterns that affect climate on timescales from years to hundreds of thousands of years", std:"HS-ESS2-4" },
+  { word:"SOLAR OUTPUT",           hint:"The Sun's energy production rate, which varies and affects Earth's climate on timescales of decades", std:"HS-ESS2-4" },
+  // HS-ESS2-6
+  { word:"CARBON CYCLE",           hint:"The cycling of carbon among the hydrosphere, atmosphere, geosphere, and biosphere",                std:"HS-ESS2-6" },
+  { word:"HYDROSPHERE",            hint:"Earth's sphere encompassing all water systems, a key participant in the carbon and biogeochemical cycles", std:"HS-ESS2-6" },
+  { word:"GEOSPHERE",              hint:"Earth's sphere encompassing solid Earth materials, involved in long-term carbon cycling",           std:"HS-ESS2-6" },
+  { word:"BIOSPHERE",              hint:"Earth's sphere including all living organisms, central to biogeochemical cycling of carbon and nutrients", std:"HS-ESS2-6" },
+  { word:"BIOGEOCHEMICAL CYCLES",  hint:"Cycles that move carbon and other elements through the ocean, atmosphere, soil, and living things", std:"HS-ESS2-6" },
+  // HS-ESS3-1
+  { word:"NATURAL RESOURCES",      hint:"Fresh water, fertile soils, and mineral deposits that human civilizations extract and depend upon", std:"HS-ESS3-1" },
+  { word:"NATURAL HAZARDS",        hint:"Volcanic eruptions, earthquakes, tsunamis, and severe weather caused by Earth system processes",    std:"HS-ESS3-1" },
+  { word:"TSUNAMIS",               hint:"Destructive ocean waves generated by interior Earth processes such as earthquakes or landslides",   std:"HS-ESS3-1" },
+  { word:"MASS WASTING",           hint:"Downslope movement of rock and soil under gravity, a surface process and natural hazard",          std:"HS-ESS3-1" },
+  // HS-ESS3-5
+  { word:"GLOBAL CLIMATE MODELS",  hint:"Scientific tools using geoscience data and physics to forecast climate change rates and impacts",   std:"HS-ESS3-5" },
+  { word:"SEA LEVEL",              hint:"Ocean height used as a key measured indicator of ongoing climate change impacts",                   std:"HS-ESS3-5" },
+  { word:"GLACIAL ICE VOLUMES",    hint:"The measurable amount of frozen water in glaciers, used as an indicator of climate change",        std:"HS-ESS3-5" },
+  { word:"EMPIRICAL EVIDENCE",     hint:"Information gathered through direct observation and measurement that supports scientific claims",   std:"HS-ESS3-5" },
+  { word:"GEOSCIENCE DATA",        hint:"Precipitation and temperature records used as evidence to assess and forecast climate change",      std:"HS-ESS3-5" },
+  { word:"PRECIPITATION",          hint:"Rainfall and snowfall distribution patterns used as evidence in climate change assessments",        std:"HS-ESS3-5" },
+  // HS-ESS3-6
+  { word:"GEOENGINEERING",         hint:"Large-scale design solutions deliberately intervening in Earth's systems to address climate change", std:"HS-ESS3-6" },
+  // HS-ETS1
+  { word:"CRITERIA",               hint:"Qualitative and quantitative measures used to evaluate whether engineering solutions meet requirements", std:"HS-ETS1-1" },
+  { word:"CONSTRAINTS",            hint:"Limitations such as cost, materials, or time that engineering solutions must work within",           std:"HS-ETS1-1" },
+  { word:"ENGINEERING DESIGN",     hint:"The systematic process of solving real-world global challenges such as clean water and energy",     std:"HS-ETS1-1" },
+  { word:"QUALITATIVE",            hint:"Descriptive non-numerical characteristics used to specify requirements for a design solution",      std:"HS-ETS1-1" },
+  { word:"QUANTITATIVE",           hint:"Measurable numerical specifications used to define exact requirements for engineering solutions",    std:"HS-ETS1-1" },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// TIERS - WWE color scheme
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const TIERS = [
+  { id:'basic',    name:'BASIC',    cost:0,   mult:1,   color:'#ff2020', scratchColor:'#888888' },
+  { id:'silver',   name:'SILVER',   cost:15,  mult:6,   color:'#00bfff', scratchColor:'#888888' },
+  { id:'gold',     name:'GOLD',     cost:60,  mult:25,  color:'#ffd700', scratchColor:'#888888' },
+  { id:'platinum', name:'PLATINUM', cost:280, mult:100, color:'#ff0080', scratchColor:'#888888' },
+];
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// MILESTONES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const MILESTONES = {
+  1:  { title:"FIRST WIN!",         body:"You're on the board.",                    bonus:0   },
+  3:  { title:"HOT STREAK",         body:"Silver tickets unlocked. +$10",           bonus:10  },
+  5:  { title:"SHARP MIND",         body:"Five wins. +$25 cash bonus.",             bonus:25  },
+  10: { title:"VOCABULARY ACE",     body:"Gold tickets in range. +$50",            bonus:50  },
+  20: { title:"EARTH SCI SCHOLAR",  body:"Platinum-level money awaits. +$100",     bonus:100 },
+  35: { title:"GRAND MASTER",       body:"You know this curriculum cold. +$200",   bonus:200 },
+  50: { title:"NYSSLS LEGEND",      body:"All standards mastered. +$500",          bonus:500 },
+};
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// STATE
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+let cash        = 0;
+let wins        = 0;
+let curTier     = TIERS[0];
+let curItem     = null;
+let letterCells = [];
+let revealed    = [];
+let scratching  = false;
+let firstScratch= false;
+let done        = false;
+let usedIdx     = new Set();
+let bustTimer   = null;
+let resizeTimer = null;
+let dpr         = 1;
+let activeCell  = null;  // index of cell locked during a drag
+
+const BRUSH = 18;
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DOM REFS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const $cash       = document.getElementById('cash-amount');
+const $winCount   = document.getElementById('win-count');
+const $badgeStd   = document.getElementById('badge-std');
+const $badgeTier  = document.getElementById('badge-tier');
+const $payoutAmt  = document.getElementById('payout-amount');
+const $clueText   = document.getElementById('clue-text');
+const $scratchWrap= document.getElementById('scratch-wrap');
+const $lettersDiv = document.getElementById('letters-display');
+const $canvas     = document.getElementById('scratch-canvas');
+const $hint       = document.getElementById('scratch-hint');
+const $guessInput = document.getElementById('guess-input');
+const $submitBtn  = document.getElementById('submit-btn');
+const $resultPanel= document.getElementById('result-panel');
+const $resultTitle= document.getElementById('result-title');
+const $resultWord = document.getElementById('result-word');
+const $resultEarn = document.getElementById('result-earn');
+const $resultSub  = document.getElementById('result-sub');
+const $resultCont = document.getElementById('result-continue');
+const $shopTiers  = document.getElementById('shop-tiers');
+const $barcode    = document.getElementById('barcode');
+const $ticketId   = document.getElementById('ticket-id');
+const $guessArea  = document.getElementById('guess-area');
+const $ticket     = document.getElementById('ticket');
+const $msEl       = document.getElementById('milestone');
+const $msTitle    = document.getElementById('milestone-title');
+const $msBody     = document.getElementById('milestone-body');
+const $scratchNum = document.getElementById('scratch-num');
+const $scratchDen = document.getElementById('scratch-den');
+const $scratchBar = document.getElementById('scratch-bar');
+const ctx         = $canvas.getContext('2d');
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// BACKGROUND
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const bgC = document.getElementById('bg-canvas');
+const bgX = bgC.getContext('2d');
+let pts = [];
+function resizeBg(){ bgC.width=innerWidth; bgC.height=innerHeight; }
+resizeBg(); addEventListener('resize', resizeBg);
+for(let i=0;i<60;i++) pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.2+0.2,b:Math.random()*0.5+0.05,s:Math.random()*0.003+0.001,ph:Math.random()*Math.PI*2});
+(function bg(t){ bgX.clearRect(0,0,bgC.width,bgC.height); for(const p of pts){const o=p.b+Math.sin(t*.001*p.s*1000+p.ph)*.1; bgX.beginPath(); bgX.arc(p.x,p.y,p.r,0,Math.PI*2); bgX.fillStyle=`rgba(255,0,80,${Math.max(0,o*.08)})`; bgX.fill();} requestAnimationFrame(bg); })(0);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// UTILITIES
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function fmt(n){ return '$'+n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+
+function setCash(n){
+  cash = n;
+  $cash.textContent = fmt(cash);
+}
+
+function applyTheme(tier){
+  $ticket.style.borderColor   = tier.color;
+  $ticket.style.setProperty('--t-color', tier.color);
+  $guessArea.style.borderColor= tier.color;
+  $submitBtn.style.background = tier.color;
+  $submitBtn.style.color      = '#000';
+  document.getElementById('ticket-head').style.background = tier.color;
+}
+
+function genBarcode(){
+  $barcode.innerHTML='';
+  for(let i=0;i<30;i++){
+    const b=document.createElement('div'); b.className='bbar';
+    b.style.width=(Math.random()<0.3?8:4)+'px';
+    b.style.height=18+'px';
+    $barcode.appendChild(b);
+  }
+  $ticketId.textContent='TKT-'+String(Math.floor(Math.random()*1000000)).padStart(6,'0');
+}
+
+function showMilestone(ms, bonus){
+  $msTitle.textContent = ms.title;
+  $msBody.textContent  = ms.body + (bonus>0 ? '  +'+fmt(bonus) : '');
+  $msEl.classList.add('show');
+  setTimeout(()=>$msEl.classList.remove('show'), 3600);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// LETTER DISPLAY
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildLetters(word){
+  $lettersDiv.innerHTML='';
+  letterCells=[]; revealed=[];
+
+  const chars   = word.split('');
+  const letters = chars.filter(c=>c!==' ');
+  const spaces  = chars.filter(c=>c===' ').length;
+  const availW  = $scratchWrap.offsetWidth - 32;
+  const spaceW  = 12;
+  const cellW   = Math.max(12, Math.min(52, Math.floor((availW - spaces*spaceW) / letters.length - 5)));
+  const cellH   = Math.round(cellW * 1.6);
+  const fontSize= Math.round(cellW * 0.9);
+
+  chars.forEach(ch=>{
+    if(ch===' '){
+      const g=document.createElement('div'); g.className='letter-gap';
+      g.style.width=spaceW+'px'; g.style.height=cellH+'px';
+      $lettersDiv.appendChild(g);
+    } else {
+      const el=document.createElement('div'); el.className='letter-cell';
+      el.style.width=cellW+'px'; el.style.height=cellH+'px'; el.style.fontSize=fontSize+'px';
+      el.textContent=ch;
+      $lettersDiv.appendChild(el);
+      letterCells.push({el}); revealed.push(false);
+    }
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// CANVAS - draws individual patch per letter cell
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function paintCanvas(){
+  dpr = devicePixelRatio || 1;
+  const W = $scratchWrap.offsetWidth;
+  const H = $scratchWrap.offsetHeight;
+  $canvas.width  = Math.round(W * dpr);
+  $canvas.height = Math.round(H * dpr);
+  $canvas.style.width  = W+'px';
+  $canvas.style.height = H+'px';
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+  ctx.globalCompositeOperation = 'source-over';
+
+  // Use canvas BCR as reference - canvas left == scratch-wrap content-left (after border)
+  const cr = $canvas.getBoundingClientRect();
+  letterCells.forEach((cell,i)=>{
+    const lr = cell.el.getBoundingClientRect();
+    const x = lr.left - cr.left;
+    const y = lr.top  - cr.top;
+    const w = lr.width;
+    const h = lr.height;
+    cell.px=x; cell.py=y; cell.pw=w; cell.ph=h;
+    if(!revealed[i]){
+      ctx.fillStyle = curTier.scratchColor;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(x, y, w, 2);
+    }
+  });
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SCRATCH
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function getXY(e){
+  const r=$canvas.getBoundingClientRect();
+  const s=e.touches?e.touches[0]:e;
+  return {x:s.clientX-r.left, y:s.clientY-r.top};
+}
+
+function eraseCell(idx, x, y){
+  const cell = letterCells[idx];
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cell.px, cell.py, cell.pw, cell.ph);
+  ctx.clip();
+  ctx.globalCompositeOperation='destination-out';
+  ctx.globalAlpha=1;
+  // Use actual x,y (unclamped) — clip constrains erasure to cell bounds,
+  // so the brush naturally fades out as cursor moves away from the cell edge
+  ctx.fillRect(Math.round(x-BRUSH), Math.round(y-BRUSH), BRUSH*2+1, BRUSH*2+1);
+  ctx.restore();
+  ctx.globalCompositeOperation='source-over';
+}
+
+function scratch(x,y){
+  let hitIdx=-1;
+  letterCells.forEach((cell,i)=>{
+    if(revealed[i]||cell.px===undefined) return;
+    if(x>=cell.px && x<cell.px+cell.pw && y>=cell.py && y<cell.py+cell.ph) hitIdx=i;
+  });
+
+  let erasedIdx=-1;
+  if(hitIdx>=0){
+    activeCell=hitIdx;
+    eraseCell(hitIdx, x, y);
+    erasedIdx=hitIdx;
+  } else if(activeCell!==null && !revealed[activeCell] && letterCells[activeCell]?.px!==undefined){
+    // Cursor not over any cell — continue erasing the originating cell at the
+    // actual (unclamped) cursor position; clip inside eraseCell limits the damage
+    eraseCell(activeCell, x, y);
+    erasedIdx=activeCell;
+  }
+
+  if(erasedIdx===-1) return;
+  if(!firstScratch){
+    firstScratch=true;
+    $hint.style.opacity='0';
+    setTimeout(()=>{ $hint.style.display='none'; },350);
+  }
+  checkOneCell(erasedIdx);
+}
+
+function updateScratchTracker(){
+  const total = letterCells.length;
+  const n     = revealed.filter(r=>r).length;
+  $scratchNum.textContent = n;
+  $scratchDen.textContent = total;
+  const filled = total>0 ? Math.round(n/total*12) : 0;
+  $scratchBar.textContent = '█'.repeat(filled)+'░'.repeat(12-filled);
+}
+
+// Read the physical pixels of the whole cell and check what fraction is transparent.
+// 40% threshold means the user only needs to cover ~half the visible area — generous
+// enough to avoid frustrating "stuck at 99%" scenarios without feeling like instant reveal.
+function checkOneCell(i){
+  if(revealed[i]||!letterCells[i]||letterCells[i].px===undefined) return;
+  const cell=letterCells[i];
+  const x0=Math.round(cell.px*dpr), y0=Math.round(cell.py*dpr);
+  const cw=Math.max(1,Math.round(cell.pw*dpr)), ch=Math.max(1,Math.round(cell.ph*dpr));
+  if(x0<0||y0<0||x0+cw>$canvas.width||y0+ch>$canvas.height) return;
+  const data=ctx.getImageData(x0,y0,cw,ch).data;
+  let transparent=0, total=0;
+  const step=Math.max(1,Math.ceil(dpr))*4; // skip dpr pixels at a time — 1 sample/CSS px
+  for(let j=3;j<data.length;j+=step*4){
+    if(data[j]<80) transparent++;
+    total++;
+  }
+  if(total>0 && transparent/total>=0.40){
+    revealed[i]=true;
+    updateScratchTracker();
+    if(!done && revealed.every(r=>r)){
+      clearTimeout(bustTimer);
+      bustTimer=setTimeout(()=>{ if(!done) showResult(false,0); },500);
+    }
+  }
+}
+
+function sweepAll(cb){
+  ctx.globalCompositeOperation='destination-out';
+  let i=0;
+  function next(){
+    if(i>=letterCells.length){
+      ctx.globalCompositeOperation='source-over';
+      revealed.fill(true);
+      updateScratchTracker();
+      setTimeout(cb,200);
+      return;
+    }
+    const c=letterCells[i];
+    if(c.px!==undefined) ctx.fillRect(c.px,c.py,c.pw,c.ph);
+    revealed[i]=true; i++;
+    setTimeout(next,28);
+  }
+  next();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RESIZE - ResizeObserver on scratch-wrap fires when the element
+// itself changes size (catches scrollbar-induced secondary shifts).
+// Debounce with setTimeout(0) to batch rapid consecutive fires.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+new ResizeObserver(()=>{
+  if(!curItem) return;
+  clearTimeout(resizeTimer);
+  resizeTimer=setTimeout(()=>{
+    const saved=[...revealed];
+    buildLetters(curItem.word);
+    revealed=saved;
+    requestAnimationFrame(()=>requestAnimationFrame(paintCanvas));
+  },0);
+}).observe($scratchWrap);
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// DEAL
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function deal(tier){
+  curTier=tier; done=false; firstScratch=false; scratching=false; activeCell=null;
+  clearTimeout(bustTimer); bustTimer=null;
+
+  if(usedIdx.size>=VOCAB.length) usedIdx.clear();
+  let idx; do{ idx=Math.floor(Math.random()*VOCAB.length); }while(usedIdx.has(idx));
+  usedIdx.add(idx);
+  curItem=VOCAB[idx];
+
+  applyTheme(tier);
+  $badgeTier.textContent = tier.name;
+  const lcount = curItem.word.replace(/ /g,'').length;
+  $payoutAmt.textContent = fmt(lcount*tier.mult);
+  $clueText.textContent  = curItem.hint;
+  genBarcode();
+
+  buildLetters(curItem.word);
+  updateScratchTracker();
+  $hint.style.display=''; $hint.style.opacity='1';
+
+  $guessInput.value=''; $guessInput.disabled=false;
+  $guessInput.classList.remove('wrong');
+  $submitBtn.disabled=false;
+  $resultPanel.style.display='none';
+  updateShop();
+
+  requestAnimationFrame(()=>requestAnimationFrame(paintCanvas));
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// GUESS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function handleGuess(){
+  if(done) return;
+  const g=$guessInput.value.trim().toUpperCase();
+  if(!g) return;
+  if(g===curItem.word){
+    clearTimeout(bustTimer);
+    const unrev=revealed.filter(r=>!r).length;
+    const earn =unrev*curTier.mult;
+    sweepAll(()=>showResult(true,earn));
+  } else {
+    $guessInput.classList.add('wrong');
+    setTimeout(()=>$guessInput.classList.remove('wrong'),400);
+    $guessInput.value='';
+    $guessInput.placeholder='WRONG -- KEEP SCRATCHING';
+    setTimeout(()=>{ $guessInput.placeholder='TYPE THE TERM...'; },1600);
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// RESULT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function showResult(won,earn){
+  done=true; $guessInput.disabled=true; $submitBtn.disabled=true;
+  $resultWord.textContent=curItem.word;
+
+  if(won){
+    wins++; $winCount.textContent=wins; setCash(cash+earn);
+    $resultPanel.style.background='rgba(0,20,0,0.95)';
+    $resultTitle.style.color='#00ff44'; $resultTitle.textContent='YOU WIN!';
+    $resultEarn.style.color='#00ff44';
+    $resultEarn.textContent=earn>0?'+'+fmt(earn):'';
+    $resultSub.textContent=earn>0
+      ? revealed.filter(r=>!r).length+' LETTERS UNREVEALED'
+      : 'ALL LETTERS REVEALED -- NO PRIZE';
+    $resultCont.style.color='#00ff44';
+    if(MILESTONES[wins]){
+      const ms=MILESTONES[wins];
+      setTimeout(()=>{ if(ms.bonus) setCash(cash+ms.bonus); showMilestone(ms,ms.bonus); },700);
+    }
+  } else {
+    $resultPanel.style.background='rgba(20,0,0,0.95)';
+    $resultTitle.style.color='#ff2020'; $resultTitle.textContent='BUSTED!';
+    $resultEarn.textContent='';
+    $resultSub.textContent='ALL LETTERS SCRATCHED WITH NO CORRECT GUESS';
+    $resultCont.style.color='#ff2020';
+  }
+  $resultPanel.style.display='flex';
+  updateShop();
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// SHOP
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+function buildShop(){
+  $shopTiers.innerHTML='';
+  TIERS.forEach(tier=>{
+    const btn=document.createElement('button'); btn.className='tier-btn';
+    btn.style.color=tier.color; btn.dataset.id=tier.id;
+    btn.innerHTML=`<span class="tier-name" style="color:${tier.color}">${tier.name}</span>
+      <span class="tier-cost">${tier.cost===0?'FREE':fmt(tier.cost)}</span>
+      <span class="tier-rate">$${tier.mult}/LETTER</span>`;
+    btn.addEventListener('click',()=>buyTicket(tier));
+    $shopTiers.appendChild(btn);
+  });
+}
+
+function updateShop(){
+  $shopTiers.querySelectorAll('.tier-btn').forEach((btn,i)=>{
+    btn.disabled=TIERS[i].cost>cash;
+  });
+}
+
+function buyTicket(tier){
+  if(tier.cost>cash) return;
+  if(tier.cost>0) setCash(cash-tier.cost);
+  deal(tier);
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// EVENTS
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+$canvas.addEventListener('mousedown',e=>{ if(done)return; scratching=true; activeCell=null; const{x,y}=getXY(e); scratch(x,y); });
+window.addEventListener('mousemove',e=>{ if(!scratching||done)return; const{x,y}=getXY(e); scratch(x,y); });
+window.addEventListener('mouseup',()=>{ scratching=false; activeCell=null; });
+$canvas.addEventListener('touchstart',e=>{ e.preventDefault(); if(done)return; scratching=true; activeCell=null; const{x,y}=getXY(e); scratch(x,y); },{passive:false});
+$canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!scratching||done)return; const{x,y}=getXY(e); scratch(x,y); },{passive:false});
+$canvas.addEventListener('touchend',()=>{ scratching=false; activeCell=null; });
+
+$submitBtn.addEventListener('click',handleGuess);
+$guessInput.addEventListener('keydown',e=>{ if(e.key==='Enter') handleGuess(); });
+$resultCont.addEventListener('click',()=>{ $resultPanel.style.display='none'; updateShop(); });
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// INIT
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+buildShop();
+deal(TIERS[0]);
+</script>
+</body>
+</html>
