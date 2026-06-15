@@ -463,6 +463,45 @@ const VOCAB = [
   { word:"ENGINEERING DESIGN",     hint:"The systematic process of solving real-world global challenges such as clean water and energy",     std:"HS-ETS1-1" },
   { word:"QUALITATIVE",            hint:"Descriptive non-numerical characteristics used to specify requirements for a design solution",      std:"HS-ETS1-1" },
   { word:"QUANTITATIVE",           hint:"Measurable numerical specifications used to define exact requirements for engineering solutions",    std:"HS-ETS1-1" },
+  // HS-ESS2-2
+  { word:"ATMOSPHERE",             hint:"The layer of air surrounding Earth", std:"HS-ESS2-2" },
+  { word:"CRYOSPHERE",             hint:"Earth's ice and snow, including glaciers and sea ice", std:"HS-ESS2-2" },
+  { word:"FEEDBACK LOOPS",         hint:"When a change in one system causes effects that loop back and increase or decrease that change", std:"HS-ESS2-2" },
+  { word:"ALBEDO",                 hint:"How much sunlight a surface reflects versus absorbs", std:"HS-ESS2-2" },
+  // HS-ESS2-4 (additional)
+  { word:"ROTATION",               hint:"Earth spinning on its axis, causing day and night", std:"HS-ESS2-4" },
+  { word:"REVOLUTION",             hint:"Earth's yearly trip around the Sun", std:"HS-ESS2-4" },
+  { word:"AXIAL TILT",             hint:"The tilt of Earth's axis that causes the seasons", std:"HS-ESS2-4" },
+  { word:"MILANKOVITCH CYCLES",    hint:"Slow, repeating changes in Earth's orbit and tilt that affect climate over thousands of years", std:"HS-ESS2-4" },
+  { word:"CORIOLIS EFFECT",        hint:"The bending of wind and ocean currents caused by Earth's rotation", std:"HS-ESS2-4" },
+  { word:"AIR PRESSURE",           hint:"The push of air on everything around it; differences in it cause wind", std:"HS-ESS2-4" },
+  { word:"ATMOSPHERIC CIRCULATION", hint:"The large-scale pattern of air moving around the globe", std:"HS-ESS2-4" },
+  { word:"JET STREAM",             hint:"A fast band of wind high up in the atmosphere", std:"HS-ESS2-4" },
+  { word:"PREVAILING WINDS",       hint:"Winds that blow mostly in one direction in a region", std:"HS-ESS2-4" },
+  { word:"GREENHOUSE EFFECT",      hint:"The trapping of heat near Earth by certain gases in the atmosphere", std:"HS-ESS2-4" },
+  { word:"GREENHOUSE GASES",       hint:"Gases like carbon dioxide and methane that trap heat in the atmosphere", std:"HS-ESS2-4" },
+  // HS-ESS2-5
+  { word:"WATER CYCLE",            hint:"The path water takes as it evaporates, forms clouds, falls as rain or snow, and flows back", std:"HS-ESS2-5" },
+  { word:"EVAPORATION",            hint:"Water changing from liquid to gas", std:"HS-ESS2-5" },
+  { word:"CONDENSATION",           hint:"Water vapor changing into liquid droplets, forming clouds", std:"HS-ESS2-5" },
+  { word:"HUMIDITY",               hint:"The amount of water vapor in the air", std:"HS-ESS2-5" },
+  { word:"DENSITY",                hint:"How tightly packed matter is, which determines if it sinks or rises", std:"HS-ESS2-5" },
+  { word:"THERMAL ENERGY TRANSFER", hint:"The movement of heat from warmer to cooler areas", std:"HS-ESS2-5" },
+  // HS-ESS3-2
+  { word:"COST-BENEFIT ANALYSIS",  hint:"Comparing the good and bad outcomes of a decision before making it", std:"HS-ESS3-2" },
+  { word:"HAZARD MITIGATION",      hint:"Ways to reduce the damage caused by natural disasters", std:"HS-ESS3-2" },
+  // HS-ESS3-3
+  { word:"HUMAN IMPACT",           hint:"The ways people affect the environment", std:"HS-ESS3-3" },
+  { word:"BIODIVERSITY",           hint:"The variety of living things in an area", std:"HS-ESS3-3" },
+  { word:"SUSTAINABILITY",         hint:"Using resources in a way that doesn't run them out for future generations", std:"HS-ESS3-3" },
+  // HS-ESS3-4
+  { word:"RESOURCE MANAGEMENT",    hint:"Planning how to use natural resources wisely", std:"HS-ESS3-4" },
+  { word:"RENEWABLE RESOURCES",    hint:"Resources that nature can replace fairly quickly, like sunlight or wind", std:"HS-ESS3-4" },
+  { word:"NONRENEWABLE RESOURCES", hint:"Resources that take far too long to be replaced once used up, like oil or coal", std:"HS-ESS3-4" },
+  // HS-ETS1 (additional)
+  { word:"TRADE-OFFS",             hint:"Giving up one thing to gain another when choosing a design", std:"HS-ETS1-2" },
+  { word:"ITERATIVE TESTING",      hint:"Testing and improving a design again and again", std:"HS-ETS1-3" },
+  { word:"OPTIMIZATION",           hint:"Making a design work as well as possible", std:"HS-ETS1-3" },
 ];
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -682,7 +721,7 @@ function eraseCell(idx, x, y){
 function scratch(x,y){
   let hitIdx=-1;
   letterCells.forEach((cell,i)=>{
-    if(revealed[i]||cell.px===undefined) return;
+    if(cell.px===undefined) return;
     if(x>=cell.px && x<cell.px+cell.pw && y>=cell.py && y<cell.py+cell.ph) hitIdx=i;
   });
 
@@ -691,7 +730,7 @@ function scratch(x,y){
     activeCell=hitIdx;
     eraseCell(hitIdx, x, y);
     erasedIdx=hitIdx;
-  } else if(activeCell!==null && !revealed[activeCell] && letterCells[activeCell]?.px!==undefined){
+  } else if(activeCell!==null && letterCells[activeCell]?.px!==undefined){
     // Cursor not over any cell — continue erasing the originating cell at the
     // actual (unclamped) cursor position; clip inside eraseCell limits the damage
     eraseCell(activeCell, x, y);
